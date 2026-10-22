@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login Avatar Demo</title>
+<style>
+  :root {
+    --bg-page: #f4f1fb;
+    --bg-surface: #ffffff;
+    --border: #e3ddf6;
+    --text: #27223b;
+    --muted: #8a81a6;
+    --accent: #6c4bf4;
+    --accent-dark: #4c2fd1;
+  }
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg-page);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text);
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 16px;
+    box-sizing: border-box;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 20px 45px rgba(76, 47, 209, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+    padding: 32px 28px;
+    box-sizing: border-box;
+  }
+  h1 {
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+  }
+  p.subtitle {
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 0.875rem;
+  }
+  button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:hover { background: var(--accent-dark); }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .profile-row img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+  }
+  .profile-row .name { font-weight: 700; font-size: 1.0625rem; }
+  .profile-row .email { color: var(--muted); font-size: 0.8125rem; }
+  pre {
+    background: #1e1b2e;
+    color: #d9d4f5;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    overflow: auto;
+    max-height: 320px;
+    margin: 0 0 20px;
+  }
+  .status {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .status.is-error { color: #c2410c; }
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h1>Login Avatar Demo</h1>
+    <p class="subtitle" id="subtitle">Checking session&hellip;</p>
+    <div id="content"></div>
+  </div>
+
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
+  <script>
+    const AUTH0_DOMAIN = "forms-acul.acmetest.org";
+    const AUTH0_CLIENT_ID = "4f9CNSE6ya4OETi7jleVDRE0NYtH5ueW";
+
+    const subtitleEl = document.getElementById("subtitle");
+    const contentEl = document.getElementById("content");
+
+    function renderLoggedOut() {
+      subtitleEl.textContent = "Sign in to see your profile";
+      contentEl.innerHTML = '<button id="login-btn">Log in</button>';
+      document.getElementById("login-btn").addEventListener("click", () => {
+        auth0Client.loginWithRedirect();
+      });
+    }
+
+    function renderLoggedIn(user, claims) {
+      subtitleEl.textContent = "You're signed in";
+      const picture = user.picture
+        ? '<img src="' + user.picture + '" alt="">'
+        : "";
+      contentEl.innerHTML =
+        '<div class="profile-row">' +
+          picture +
+          '<div>' +
+            '<div class="name">' + (user.name || user.sub) + '</div>' +
+            '<div class="email">' + (user.email || "") + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<pre>' + JSON.stringify(claims, null, 2) + '</pre>' +
+        '<button id="logout-btn">Log out</button>';
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        auth0Client.logout({ logoutParams: { returnTo: window.location.origin + window.location.pathname } });
+      });
+    }
+
+    function renderError(message) {
+      subtitleEl.textContent = "Something went wrong";
+      contentEl.innerHTML = '<p class="status is-error"></p><button id="retry-btn">Try again</button>';
+      contentEl.querySelector(".status").textContent = message;
+      document.getElementById("retry-btn").addEventListener("click", () => {
+        window.location.href = window.location.origin + window.location.pathname;
+      });
+    }
+
+    let auth0Client;
+
+    async function init() {
+      auth0Client = await auth0.createAuth0Client({
+        domain: AUTH0_DOMAIN,
+        clientId: AUTH0_CLIENT_ID,
+        authorizationParams: {
+          redirect_uri: window.location.origin + window.location.pathname,
+        },
+        cacheLocation: "localstorage",
+      });
+
+      const query = window.location.search;
+      if (query.includes("code=") && query.includes("state=")) {
+        try {
+          await auth0Client.handleRedirectCallback();
+        } catch (err) {
+          renderError(err.message || "Failed to complete login.");
+          return;
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      const isAuthenticated = await auth0Client.isAuthenticated();
+      if (isAuthenticated) {
+        const user = await auth0Client.getUser();
+        const claims = await auth0Client.getIdTokenClaims();
+        renderLoggedIn(user, claims);
+      } else {
+        renderLoggedOut();
+      }
+    }
+
+    init().catch((err) => renderError(err.message || String(err)));
+  </script>
+</body>
+</html>

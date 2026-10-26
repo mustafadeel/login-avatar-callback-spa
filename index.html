@@ -109,9 +109,14 @@
 
     function renderLoggedOut() {
       subtitleEl.textContent = "Sign in to see your profile";
-      contentEl.innerHTML = '<button id="login-btn">Log in</button>';
+      contentEl.innerHTML =
+        '<button id="login-btn">Log in</button> ' +
+        '<button id="signup-btn" style="margin-left:8px;background:#fff;color:#6c4bf4;border:1px solid #6c4bf4">Sign up</button>';
       document.getElementById("login-btn").addEventListener("click", () => {
         auth0Client.loginWithRedirect();
+      });
+      document.getElementById("signup-btn").addEventListener("click", () => {
+        auth0Client.loginWithRedirect({ authorizationParams: { screen_hint: "signup" } });
       });
     }
 

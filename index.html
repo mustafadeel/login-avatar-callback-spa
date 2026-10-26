@@ -59,6 +59,8 @@
     cursor: pointer;
   }
   button:hover { background: var(--accent-dark); }
+  button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); margin-top: 10px; box-sizing: border-box; }
+  button.secondary:hover { background: #f4f1fb; }
   button:disabled { opacity: 0.6; cursor: default; }
   .profile-row {
     display: flex;
@@ -110,8 +112,8 @@
     function renderLoggedOut() {
       subtitleEl.textContent = "Sign in to see your profile";
       contentEl.innerHTML =
-        '<button id="login-btn">Log in</button> ' +
-        '<button id="signup-btn" style="margin-left:8px;background:#fff;color:#6c4bf4;border:1px solid #6c4bf4">Sign up</button>';
+        '<button id="login-btn">Log in</button>' +
+        '<button id="signup-btn" class="secondary">Sign up</button>';
       document.getElementById("login-btn").addEventListener("click", () => {
         auth0Client.loginWithRedirect();
       });
